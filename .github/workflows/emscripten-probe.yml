@@ -22,9 +22,9 @@ jobs:
       - name: Show toolchain versions
         run: |
           emcc --version
-          emcmake --version
           cmake --version
           ninja --version
+          emcmake --help
 
       - name: Probe native CMake project with Emscripten
         id: configure
