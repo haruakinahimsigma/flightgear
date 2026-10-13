@@ -1,0 +1,50 @@
+name: FlightGear WebAssembly compatibility probe
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  configure-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out FlightGear
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Emscripten SDK
+        uses: mymindstorm/setup-emsdk@v14
+
+      - name: Show toolchain versions
+        run: |
+          emcc --version
+          emcmake --version
+          cmake --version
+          ninja --version
+
+      - name: Probe native CMake project with Emscripten
+        id: configure
+        continue-on-error: true
+        run: |
+          emcmake cmake -S . -B build-web-probe -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_STANDARD=17
+
+      - name: Summarize result
+        if: always()
+        run: |
+          {
+            echo "## FlightGear WebAssembly probe"
+            echo
+            if [ "${{ steps.configure.outcome }}" = "success" ]; then
+              echo "CMake configuration succeeded. This does **not** mean the simulator builds or runs in a browser yet."
+            else
+              echo "CMake configuration failed. See the preceding log for the first unsupported dependency or platform assumption."
+              echo
+              echo "This is an initial diagnostic only; it does not modify FlightGear's native build settings."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
